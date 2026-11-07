@@ -4,6 +4,7 @@ from passlib.context import CryptContext
 from jose import jwt
 from dotenv import load_dotenv
 
+# Bagian fungsi hash, verifikasi password, dan membuat JWT token
 load_dotenv()
 
 # Enkripsi password

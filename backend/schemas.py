@@ -2,6 +2,7 @@ from pydantic import BaseModel, EmailStr, Field
 from typing import Optional
 from datetime import datetime
 
+# Bagian data model untuk req dan response API
 # Skema JWT Token
 class Token(BaseModel):
     access_token: str

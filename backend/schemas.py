@@ -2,38 +2,30 @@ from pydantic import BaseModel, EmailStr, Field
 from typing import Optional
 from datetime import datetime
 
-# ==========================================
-# 1. SKEMA TOKEN (Untuk Login)
-# ==========================================
+# Skema JWT Token
 class Token(BaseModel):
     access_token: str
     token_type: str
 
-# ==========================================
-# 2. SKEMA USER (Pengguna)
-# ==========================================
-# Skema saat user mengirim data dari form pendaftaran (hanya butuh email & password)
+# Skema user register, login, dan response user
 class UserCreate(BaseModel):
-    email: EmailStr  # Otomatis menolak jika format email salah (misal: tanpa '@')
-    password: str # Password minimal 8 karakter
+    email: EmailStr  
+    password: str 
     username: str
 
 class UserLogin(BaseModel):
     email: str
     password: str
 
-# Skema saat backend mengembalikan data user (Password TIDAK BOLEH dikembalikan!)
 class UserResponse(BaseModel):
     id: int
     email: str
     username: str
     created_time: datetime
 
-    model_config = {"from_attributes": True} # Penting: Agar Pydantic bisa membaca data dari SQLAlchemy
+    model_config = {"from_attributes": True} 
 
-# ==========================================
-# 3. SKEMA MOVIE (Film)
-# ==========================================
+# Skema Movie response 
 class MovieResponse(BaseModel):
     id: int
     title: str
@@ -48,27 +40,23 @@ class MovieResponse(BaseModel):
 
     model_config = {"from_attributes": True}
 
-# Menerima ID Film, angka bintang, dan teks ulasan dari frontend
 class WatchedCreate(BaseModel):
     movie_id: int
     rating: int
     review: str | None = None
 
-# Mengirim kembali data ulasan beserta detail filmnya ke frontend
 class WatchedResponse(BaseModel):
     id: int
     movie_id: int
     rating: int
-    review: str | None = None  # <--- UBAH text_review MENJADI review
-    watched_time: datetime | None = None  # (Atau format waktu yang kamu gunakan)
+    review: str | None = None  
+    watched_time: datetime | None = None  
     movie: MovieResponse
 
     class Config:
         from_attributes = True
 
-# ==========================================
-# 4. SKEMA WATCHLIST (Daftar Tontonan)
-# ==========================================
+# Skema watchlist
 class WatchlistCreate(BaseModel):
     movie_id: int
 
@@ -76,16 +64,14 @@ class WatchlistResponse(BaseModel):
     id: int
     movie_id: int
     added_time: datetime
-    movie: MovieResponse # Otomatis melampirkan detail film di dalam JSON
+    movie: MovieResponse 
 
     model_config = {"from_attributes": True}
 
-# ==========================================
-# 5. SKEMA REVIEWS (Ulasan / Watched)
-# ==========================================
+# Skema reviewss
 class ReviewCreate(BaseModel):
     movie_id: int
-    rating: int = Field(..., ge=1, le=5)  # Validasi: 'ge' (Greater/Equal 1), 'le' (Less/Equal 5)
+    rating: int = Field(..., ge=1, le=5) 
     review: Optional[str] = None
 
 class ReviewResponse(BaseModel):
@@ -98,8 +84,6 @@ class ReviewResponse(BaseModel):
 
     model_config = {"from_attributes": True}
 
-# ==========================================
-# SCHEMA UNTUK REKOMENDASI AI
-# ==========================================
+# Skema rekomendasi AI
 class RecommendationRequest(BaseModel):
     prompt: str

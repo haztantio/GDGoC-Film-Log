@@ -4,34 +4,33 @@ from .database import engine
 from . import models
 from .routers import auth_router, movie_router, watch_router
 
-# 1. Perintah ini akan menyuruh SQLAlchemy mengecek PostgreSQL. 
-# Jika tabel belum ada, ia akan otomatis membuatnya berdasarkan cetak biru di models.py
+# Cek ketersediaan tabel di database
 models.Base.metadata.create_all(bind=engine)
 
-# 2. Inisialisasi Aplikasi FastAPI
+# Inisialisasi FastAPI
 app = FastAPI(
     title="Movie Watchlist REST API",
     description="Backend service untuk mengelola film, watchlist, rating",
     version="1.0"
 )
 
-# 2. Tambahkan pengaturan CORS di bawah app = FastAPI(...)
+# Menambahkan CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Mengizinkan akses dari semua port frontend (Live Server, React, dll)
+    allow_origins=["*"],  # allow akses port frontend
     allow_credentials=True,
-    allow_methods=["*"],  # Mengizinkan semua metode (GET, POST, PUT, DELETE)
-    allow_headers=["*"],  # Mengizinkan pengiriman token JWT di header
+    allow_methods=["*"],  # allow GET, POST, PUT, DELETE
+    allow_headers=["*"],  # allow header Authorization
 )
 
 app.include_router(auth_router.router, prefix="/api")
 app.include_router(movie_router.router, prefix="/api")
 app.include_router(watch_router.router, prefix="/api")
 
-# 3. Rute Uji Coba (Akar URL)
+# Endpoint root untuk cek server
 @app.get("/")
 def read_root():
     return {
         "status": "sukses",
-        "pesan": "Selamat! Server Backend kamu sudah menyala dan terhubung ke database."
+        "pesan": "Backend server berjalan dengan baik"
     }

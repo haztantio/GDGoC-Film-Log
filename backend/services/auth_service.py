@@ -1,44 +1,94 @@
-import os
-import jwt
+import re
 from datetime import datetime, timedelta
-from passlib.context import CryptContext
-from dotenv import load_dotenv
+from sqlalchemy.orm import Session
+from fastapi.responses import JSONResponse
+from .. import models, utils
 
-load_dotenv()
+# Pembatasan percobaan login
+login_attempts = {}
+MAX_ATTEMPTS = 5
+LOCKOUT_TIME = timedelta(minutes=1)
 
-# ==========================================
-# KONFIGURASI KEAMANAN
-# ==========================================
-SECRET_KEY = os.getenv("SECRET_KEY", "rahasia_default_jika_env_gagal_terbaca")
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # Tiket (Token) akan hangus dalam 7 hari
-
-# Menyalakan mesin pengacak (Bcrypt)
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-# ==========================================
-# FUNGSI-FUNGSI LOGIKA (SERVICE)
-# ==========================================
-
-# 1. Mengacak Password (Dipakai saat REGISTER)
-def get_password_hash(password: str) -> str:
-    """Mengubah teks asli ('qwerty') menjadi teks acak ('$2b$12$R9h...')"""
-    return pwd_context.hash(password)
-
-# 2. Mengecek Password (Dipakai saat LOGIN)
-def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Mencocokkan password yang diketik dengan hasil acakan di database"""
-    return pwd_context.verify(plain_password, hashed_password)
-
-# 3. Membuat Tiket Masuk / Token (Dipakai saat LOGIN BERHASIL)
-def create_access_token(data: dict) -> str:
-    """Membungkus data user (seperti ID dan Email) menjadi satu token JWT panjang"""
-    to_encode = data.copy()
+def register_new_user(db: Session, user_data):
+    """Cek email, hash password, dan simpan user baru ke database."""
+    db_user = db.query(models.User).filter(models.User.email == user_data.email).first()
+    if db_user:
+        return JSONResponse(
+            status_code=400,
+            content={
+                "detail": "Email already registered",
+                "message": "Email already registered",
+                "error": "Email already registered"
+            }
+        )
     
-    # Tentukan kapan token ini kadaluarsa
-    expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    to_encode.update({"exp": expire})
+    # password security
+    password_regex = r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z0-9]).{8,}$"
+    if not re.match(password_regex, user_data.password):
+        error_message = "Your password must contain at least 8 characters, including uppercase and lowercase letters, numbers, and special symbols!"
+        return JSONResponse(
+            status_code=422,
+            content={
+                "detail": error_message,
+                "message": error_message
+            }
+        )
+
+    # enkripsi password sebelum ke database
+    hashed_password = utils.get_password_hash(user_data.password)
+    new_user = models.User(
+        email=user_data.email, 
+        username=user_data.username, 
+        password_hash=hashed_password
+    )
     
-    # Segel token menggunakan kunci rahasia dari .env
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-    return encoded_jwt
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+    return new_user
+
+
+def authenticate_user(db: Session, email: str, password: str):
+    """Hitung percobaan login dan validasi kredensial"""
+    now = datetime.now()
+    
+    rate_limit_error = JSONResponse(
+        status_code=429, 
+        content={
+            "detail": "Too many failed attempts. Please wait 1 minute.",
+            "message": "Too many failed attempts. Please wait 1 minute."
+        }
+    )
+
+    # Cek percobaan login
+    if email in login_attempts:
+        attempts = login_attempts[email]
+        if attempts['count'] >= MAX_ATTEMPTS:
+            if now < attempts['lock_until']:
+                return rate_limit_error  
+            else:
+                login_attempts.pop(email, None) 
+
+    # Validasi kredensial
+    user = db.query(models.User).filter(models.User.email == email).first()
+
+    if not user or not utils.verify_password(password, user.password_hash):
+        if email not in login_attempts:
+            login_attempts[email] = {'count': 1, 'lock_until': now}
+        else:
+            login_attempts[email]['count'] += 1
+            if login_attempts[email]['count'] >= MAX_ATTEMPTS:
+                login_attempts[email]['lock_until'] = now + LOCKOUT_TIME
+                return rate_limit_error  
+        
+        return JSONResponse(
+            status_code=403, 
+            content={
+                "detail": "Invalid email or password",
+                "message": "Invalid email or password",
+                "error": "Invalid email or password"
+            }
+        )
+
+    login_attempts.pop(email, None)
+    return user

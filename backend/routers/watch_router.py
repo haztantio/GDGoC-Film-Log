@@ -4,14 +4,12 @@ from .. import models, schemas
 from ..database import get_db
 from ..dependencies import get_current_user
 
-# 1. HANYA GUNAKAN SATU ROUTER UTAMA (Tanpa Prefix agar tidak ada masalah trailing slash)
+# Router untuk mengelola watchlist dan watched logs
 router = APIRouter(
     tags=["Watchlist & Watched"]
 )
 
-# ==========================================
-# 1. WATCHLIST ENDPOINTS (Daftar Tontonan Nanti)
-# ==========================================
+# Endpoint /api/movies/watchlist (POST)
 @router.post("/watchlist", response_model=schemas.WatchlistResponse, status_code=status.HTTP_201_CREATED)
 def add_watchlist(
     data: schemas.WatchlistCreate, 
@@ -67,10 +65,7 @@ def remove_from_watchlist(
     return {"pesan": "Film berhasil dihapus dari watchlist"}
 
 
-# ==========================================
-# 2. WATCHED ENDPOINTS (Riwayat Tontonan & Ulasan)
-# ==========================================
-
+# Endpoint /api/movies/watched (POST)
 @router.post("/watched", response_model=schemas.ReviewResponse, status_code=status.HTTP_201_CREATED)
 def add_watched_log(
     data: schemas.ReviewCreate,
@@ -90,21 +85,17 @@ def add_watched_log(
     if watchlist_item:
         db.delete(watchlist_item)
 
-    # -------------------------------------------------
-    # LOGIKA PEMBASMI DUPLIKAT (UPSERT)
-    # -------------------------------------------------
+    # Logic untuk mencegah duplikasi Watched & Reviews
     existing_logs = db.query(models.WatchedReview).filter(
         models.WatchedReview.user_id == current_user.id,
         models.WatchedReview.movie_id == data.movie_id
     ).all()
 
     if existing_logs:
-        # Jika sudah ada, TIMPA data pertama (Update)
         main_log = existing_logs[0]
         main_log.rating = data.rating
         main_log.review = data.review
         
-        # HAPUS sisa duplikat hantu (Auto-Clean)
         if len(existing_logs) > 1:
             for extra_log in existing_logs[1:]:
                 db.delete(extra_log)
@@ -113,7 +104,6 @@ def add_watched_log(
         db.refresh(main_log)
         return main_log
     else:
-        # Jika benar-benar baru, buat baris baru (Insert)
         new_review = models.WatchedReview(
             user_id=current_user.id,
             movie_id=data.movie_id,
@@ -125,7 +115,7 @@ def add_watched_log(
         db.refresh(new_review)
         return new_review
 
-
+# Endpoint /api/movies/watched (GET)
 @router.get("/watched", response_model=list[schemas.ReviewResponse])
 def get_my_watched_history(
     db: Session = Depends(get_db),

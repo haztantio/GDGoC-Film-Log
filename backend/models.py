@@ -3,6 +3,7 @@ from sqlalchemy.orm import relationship
 from datetime import datetime
 from .database import Base
 
+# Model untuk tabel database
 class User(Base):
     __tablename__ = "users"
 
@@ -12,7 +13,6 @@ class User(Base):
     password_hash = Column(String, nullable=False)
     created_time = Column(DateTime, default=datetime.utcnow)
 
-    # Relasi balik untuk mempermudah pemanggilan data
     watchlists = relationship("Watchlist", back_populates="user", cascade="all, delete-orphan")
     reviews = relationship("WatchedReview", back_populates="user", cascade="all, delete-orphan")
 
@@ -44,7 +44,7 @@ class Watchlist(Base):
     user = relationship("User", back_populates="watchlists")
     movie = relationship("Movie", back_populates="watchlists")
 
-    # Mencegah pengguna memasukkan film yang sama berkali-kali
+    # Mencegah duplikasi watchlist
     __table_args__ = (UniqueConstraint('user_id', 'movie_id', name='_user_movie_uc'),)
 
 class WatchedReview(Base):

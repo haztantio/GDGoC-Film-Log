@@ -2,28 +2,29 @@ import os
 from datetime import datetime, timedelta
 from passlib.context import CryptContext
 from jose import jwt
+from dotenv import load_dotenv
 
-# 1. Konfigurasi Pengacak Password (Bcrypt)
+load_dotenv()
+
+# Enkripsi password
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-# 2. Konfigurasi Kunci Token (JWT)
-# Mengambil dari .env jika ada, atau menggunakan kunci cadangan
+# Konfigurasi JWT token
 SECRET_KEY = os.getenv("SECRET_KEY", "kunci-rahasia-gdgoc-ugm-2026")
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 1440 # Token berlaku 24 jam
+ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # Token berlaku 7 hari
 
-def hash_password(password: str):
-    """Mengacak password sebelum disimpan ke database"""
+def get_password_hash(password: str) -> str:
+    """Hash password sebelum disimpan ke database"""
     return pwd_context.hash(password)
 
-def verify_password(plain_password: str, hashed_password: str):
-    """Mengecek apakah password yang diketik sama dengan di database"""
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    """Verifikasi hash password dengan database"""
     return pwd_context.verify(plain_password, hashed_password)
 
-def create_access_token(data: dict):
-    """Membuat tiket (token) saat user berhasil login"""
+def create_access_token(data: dict) -> str:
+    """Membuat JWT token jika user berhasil login"""
     to_encode = data.copy()
     expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-    return encoded_jwt
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)

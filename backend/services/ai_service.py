@@ -4,6 +4,7 @@ import google.generativeai as genai
 
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
+# Fungsi pemanggil API Gemini dan generate film recommendation
 def generate_movie_recommendation(prompt: str, movie_catalog: str) -> dict:
     system_instruction = f"""
     Bertindaklah sebagai ahli rekomendasi film yang profesional.
@@ -20,7 +21,7 @@ def generate_movie_recommendation(prompt: str, movie_catalog: str) -> dict:
     }}
     """
 
-    model = genai.GenerativeModel('gemini-3.5-flash-lite')
+    model = genai.GenerativeModel('gemini-3.5-flash-lite') # Saya pakai Gemini Flash Lite, lebih cepat dan cukup untuk rekomendasi film
     response = model.generate_content(system_instruction)
     clean_text = response.text.replace("```json", "").replace("```", "").strip()
     

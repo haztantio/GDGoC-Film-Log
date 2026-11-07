@@ -5,6 +5,12 @@ Aplikasi frontend sederhana bertema **Letterboxd / IMDb** yang dirancang sebagai
 Frontend ini dibuat **Zero-Build & Standalone** (menggunakan Tailwind CSS CDN dan Vanilla Modern JS). Peserta **tidak perlu** menginstall `npm` dependencies apa pun untuk menjalankannya.
 
 ---
+## ‼️ NOTE DARI HASTANTIO 
+Saya telah mengubah URL API dari semual http://localhost:8000/api menjadi URL API Vercel. Saya sangat menyarankan untuk mencoba frontend yang telah di deploy: 
+
+`https://gdgoc-film-log.vercel.app/`
+
+Atau tetap menjalankan di local dengan mengganti URL API https://gdgoc-filmlog-backend.vercel.app dengan http://localhost:8000/api pada index.html dan app.js
 
 ## 🚀 Cara Menjalankan Frontend
 

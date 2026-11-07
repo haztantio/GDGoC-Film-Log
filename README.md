@@ -43,6 +43,9 @@ This platform allows users to browse movie listings, manage watchlists, and log 
 └── README.md                # Main project documentation     <-- You Here!
 ```
 
+## 🗄️ Database Architecture (ERD)
+![Database ERD](./erd.png)
+
 ---
 
 ## >> LOCAL SETUP AND INSTALLATION INSTRUCTION

@@ -7,7 +7,7 @@
 // 1. STATE MANAGEMENT
 // ==========================================
 const state = {
-  apiBaseUrl: localStorage.getItem('filmlog_api_url') || 'https://gdgoc-film-log.vercel.app',
+  apiBaseUrl: localStorage.getItem('filmlog_api_url') || 'https://gdgoc-filmlog-backend.vercel.app',
   token: localStorage.getItem('filmlog_token') || null,
   user: JSON.parse(localStorage.getItem('filmlog_user') || 'null'),
   currentTab: 'discover',
